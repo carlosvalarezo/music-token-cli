@@ -11,12 +11,17 @@ import (
 	"net/url"
 	"os"
 	"bytes"
+	"encoding/json"
 )
 
 var(
 	artistName string
 )
 
+
+type SpotifyToken struct{
+	AccessToken string `json:"access_token""`
+}
 //type Artist struct {
 //
 //}
@@ -33,10 +38,11 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		getToken()
+		//fmt.Println("token", token)
 	},
 }
 
-func getToken(){
+func getToken() SpotifyToken{
 	siteHost := "https://accounts.spotify.com/api"
 	CLIENTID, isCLIENTID := os.LookupEnv("CLIENT_ID")
 	CLIENTSECRET, isCLIENTSECRET :=os.LookupEnv("CLIENT_SECRET")
@@ -53,7 +59,7 @@ func getToken(){
 	}
 
 	if len(missing) > 0 {
-		fmt.Errorf("Missing environment variables: %s", missing)
+		fmt.Errorf("Missing environment variables %s", missing)
 	}
 
 
@@ -73,7 +79,7 @@ func getToken(){
 		log.Println("err 1", err)
 	}
 
-	f, err := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Println("err 2", err)
 	}
@@ -81,7 +87,13 @@ func getToken(){
 	if err != nil {
 		log.Fatal("err 3", err)
 	}
-	fmt.Println("response...", string(f))
+	var spotifyToken SpotifyToken
+	//for educational purposes I will leave the following line
+	fmt.Printf("body...%s", string(body))
+	json.Unmarshal(body, &spotifyToken)
+	//for educational purposes I will leave the following line
+	fmt.Printf("access_token...%s", spotifyToken.AccessToken)
+	return spotifyToken
 }
 
 func init() {
