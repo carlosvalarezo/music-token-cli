@@ -2,10 +2,15 @@
 package cmd
 
 import (
+	b64 "encoding/base64"
 	"fmt"
 	"github.com/spf13/cobra"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"net/url"
 	"os"
-	b64 "encoding/base64"
+	"bytes"
 )
 
 var(
@@ -27,37 +32,56 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		CLIENTID, isCLIENTID := os.LookupEnv("CLIENT_ID")
-		CLIENTSECRET, isCLIENTSECRET :=os.LookupEnv("CLIENT_SECRET")
-		credentials := CLIENTID + ":" + CLIENTSECRET
-		credEncoded := b64.StdEncoding.EncodeToString([]byte(credentials))
-		var missing = []string{}
-		if !isCLIENTID {
-			missing = append(missing, "CLIENT_ID")
-		}
-
-		if !isCLIENTSECRET {
-			missing = append(missing, "CLIENT_SECRET")
-		}
-
-		if len(missing) > 0 {
-			fmt.Errorf("Missing environment variables: %s", missing)
-		}
-		//resp, err := http.Get("https://jsonplaceholder.typicode.com/posts")
-		//if err != nil {
-		//	log.Fatalln(err)
-		//}
-		////We Read the response body on the line below.
-		//body, err := ioutil.ReadAll(resp.Body)
-		//if err != nil {
-		//	log.Fatalln(err)
-		//}
-		////Convert the body to type string
-		//sb := string(body)
-		//log.Printf(sb)
-		fmt.Println("artist " + artistName + " called")
-		fmt.Println("base64 " + credEncoded)
+		getToken()
 	},
+}
+
+func getToken(){
+	siteHost := "https://accounts.spotify.com/api"
+	CLIENTID, isCLIENTID := os.LookupEnv("CLIENT_ID")
+	CLIENTSECRET, isCLIENTSECRET :=os.LookupEnv("CLIENT_SECRET")
+	credentials := CLIENTID + ":" + CLIENTSECRET
+	credentialsEncoded := b64.StdEncoding.EncodeToString([]byte(credentials))
+	fmt.Println(credentialsEncoded)
+	var missing []string
+	if !isCLIENTID {
+		missing = append(missing, "CLIENT_ID")
+	}
+
+	if !isCLIENTSECRET {
+		missing = append(missing, "CLIENT_SECRET")
+	}
+
+	if len(missing) > 0 {
+		fmt.Errorf("Missing environment variables: %s", missing)
+	}
+
+
+	data := url.Values{}
+	data.Add("grant_type", "client_credentials")
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/token", siteHost), bytes.NewBufferString(data.Encode()))
+	req.Header.Set("authorization", "basic " + credentialsEncoded)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	fmt.Println("req", req)
+	if err != nil {
+		log.Println(err)
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("err 1", err)
+	}
+
+	f, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("err 2", err)
+	}
+	resp.Body.Close()
+	if err != nil {
+		log.Fatal("err 3", err)
+	}
+	fmt.Println("response...", string(f))
 }
 
 func init() {
