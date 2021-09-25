@@ -1,5 +1,6 @@
-# emediams
-Microservices to manage media entretaiment
+# music-token-cli
+
+cli written in go (with cobra) that consumes information about albums, songs and artists from spotify API endpoints using the provided JWT
 
 # How to create a cli in go with cobra
 
